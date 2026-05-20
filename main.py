@@ -21,6 +21,7 @@ async def root():
 
 class AnalyzeRequest(BaseModel):
     code: str
+    language: str = "python"
 
 class ExpansionProposal(BaseModel):
     name: str
@@ -32,26 +33,70 @@ class AnalysisResult(BaseModel):
     complexity: str
     proposals: list[ExpansionProposal]
 
-def run_code_securely(code: str, timeout: int = 5) -> dict:
-    """Runs Python code in a subprocess with a timeout and captures output."""
+def run_code_securely(code: str, language: str = "python", timeout: int = 5) -> dict:
+    """Runs code in a subprocess with a timeout and captures output."""
     start_time = time.time()
     try:
-        # Create a temporary file to run the code
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
-            temp_path = f.name
-        
-        # Run it
-        result = subprocess.run(
-            ['python3', temp_path],
-            capture_output=True,
-            text=True,
-            timeout=timeout
-        )
+        if language == "python":
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                f.write(code)
+                temp_path = f.name
+            
+            result = subprocess.run(
+                ['python3', temp_path],
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            os.remove(temp_path)
+            
+        elif language == "c":
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.c', delete=False) as f:
+                f.write(code)
+                temp_path = f.name
+            
+            out_path = temp_path[:-2] + ".out"
+            compile_res = subprocess.run(['gcc', temp_path, '-o', out_path], capture_output=True, text=True)
+            
+            if compile_res.returncode != 0:
+                os.remove(temp_path)
+                return {
+                    "success": False,
+                    "stdout": "",
+                    "stderr": f"Compilation Error:\n{compile_res.stderr}",
+                    "execution_time_ms": 0
+                }
+                
+            result = subprocess.run([out_path], capture_output=True, text=True, timeout=timeout)
+            os.remove(temp_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+                
+        elif language == "cpp":
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.cpp', delete=False) as f:
+                f.write(code)
+                temp_path = f.name
+            
+            out_path = temp_path[:-4] + ".out"
+            compile_res = subprocess.run(['g++', temp_path, '-o', out_path], capture_output=True, text=True)
+            
+            if compile_res.returncode != 0:
+                os.remove(temp_path)
+                return {
+                    "success": False,
+                    "stdout": "",
+                    "stderr": f"Compilation Error:\n{compile_res.stderr}",
+                    "execution_time_ms": 0
+                }
+                
+            result = subprocess.run([out_path], capture_output=True, text=True, timeout=timeout)
+            os.remove(temp_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+        else:
+            return {"success": False, "stdout": "", "stderr": "Unsupported language", "execution_time_ms": 0}
+
         end_time = time.time()
-        
-        # Clean up
-        os.remove(temp_path)
         
         return {
             "success": result.returncode == 0,
@@ -60,7 +105,10 @@ def run_code_securely(code: str, timeout: int = 5) -> dict:
             "execution_time_ms": round((end_time - start_time) * 1000, 2)
         }
     except subprocess.TimeoutExpired:
-        os.remove(temp_path)
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.remove(temp_path)
+        if 'out_path' in locals() and os.path.exists(out_path):
+            os.remove(out_path)
         return {
             "success": False,
             "stdout": "",
@@ -82,20 +130,20 @@ async def analyze_code(request: AnalyzeRequest):
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set on the server.")
     
     # 1. Run Original Code Benchmark
-    original_benchmark = run_code_securely(request.code)
+    original_benchmark = run_code_securely(request.code, request.language)
     
     # 2. Agent Workflow: Analyze and Propose
     try:
         client = genai.Client(api_key=api_key)
         
         prompt = f"""
-        Analyze the following Python code.
+        Analyze the following {request.language} code.
         Identify its current purpose and time/space complexity.
         Then, propose exactly 2 distinct ways to expand its scope, optimize it, or make it more robust.
-        For each proposal, provide the FULL, runnable Python code that implements the change. Ensure the code actually prints some output so it can be benchmarked.
+        For each proposal, provide the FULL, runnable {request.language} code that implements the change. Ensure the code actually prints some output so it can be benchmarked.
         
         Code to analyze:
-        ```python
+        ```{request.language}
         {request.code}
         ```
         """
@@ -118,7 +166,7 @@ async def analyze_code(request: AnalyzeRequest):
     # 3. Agent Workflow: Benchmark Proposals
     benchmarked_proposals = []
     for proposal in analysis_data.get("proposals", []):
-        benchmark_result = run_code_securely(proposal["code"])
+        benchmark_result = run_code_securely(proposal["code"], request.language)
         benchmarked_proposals.append({
             "name": proposal["name"],
             "description": proposal["description"],
