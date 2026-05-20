@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futhermore: Agentic Powered Expansion and Benchmarking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="background-elements">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <header class="glass-panel">
+        <h1>Futhermore: <span class="gradient-text">Agentic Powered Expansion and Benchmarking</span></h1>
+        <p>Input code, let the AI analyze, propose architectural expansions, and run sandbox benchmarks.</p>
+    </header>
+
+    <main class="container">
+        <!-- Input Section -->
+        <section class="input-section glass-panel">
+            <div class="section-header">
+                <h2>Original Code</h2>
+                <div class="actions">
+                    <button id="analyzeBtn" class="btn primary-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Analyze & Benchmark
+                    </button>
+                </div>
+            </div>
+            <textarea id="codeInput" placeholder="# Write some Python code here...
+def calculate_fibonacci(n):
+    if n <= 1:
+        return n
+    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)
+
+print('Result:', calculate_fibonacci(32))"></textarea>
+            
+            <div id="originalResult" class="result-card hidden">
+                <h3>Original Benchmark</h3>
+                <div class="metrics">
+                    <div class="metric"><span class="label">Time:</span> <span id="origTime" class="value">-</span> ms</div>
+                    <div class="metric"><span class="label">Status:</span> <span id="origStatus" class="value badge">-</span></div>
+                </div>
+                <div class="output-block">
+                    <h4>Output</h4>
+                    <pre><code id="origOutput"></code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            
+            <div id="loadingState" class="loading-state glass-panel hidden">
+                <div class="spinner"></div>
+                <h3>Agentic Workflow Running...</h3>
+                <p>Analyzing code -> Proposing Expansions -> Running Sandbox Benchmarks</p>
+            </div>
+
+            <div id="analysisPanel" class="analysis-panel glass-panel hidden">
+                <div class="section-header">
+                    <h2>AI Analysis</h2>
+                </div>
+                <div class="analysis-content">
+                    <div class="info-group">
+                        <h3>Summary</h3>
+                        <p id="analysisSummary"></p>
+                    </div>
+                    <div class="info-group">
+                        <h3>Current Complexity</h3>
+                        <p id="analysisComplexity"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="proposalsContainer" class="proposals-container">
+                <!-- Proposals will be injected here by JS -->
+            </div>
+
+        </section>
+    </main>
+
+    <template id="proposalTemplate">
+        <div class="proposal-card glass-panel fade-in">
+            <div class="proposal-header">
+                <h3 class="proposal-name"></h3>
+                <span class="badge time-badge"></span>
+            </div>
+            <p class="proposal-description"></p>
+            
+            <div class="code-compare">
+                <div class="code-block">
+                    <h4>Expanded Code</h4>
+                    <pre><code class="proposal-code"></code></pre>
+                </div>
+            </div>
+
+            <div class="benchmark-results">
+                <div class="metrics">
+                    <div class="metric"><span class="label">Status:</span> <span class="proposal-status badge"></span></div>
+                    <div class="metric diff-metric"><span class="label">Speedup:</span> <span class="proposal-diff value"></span></div>
+                </div>
+                <div class="output-block">
+                    <h4>Sandbox Output</h4>
+                    <pre><code class="proposal-output"></code></pre>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
