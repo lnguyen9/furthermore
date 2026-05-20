@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const analyzeBtn = document.getElementById('analyzeBtn');
     const codeInput = document.getElementById('codeInput');
+    const languageSelect = document.getElementById('languageSelect');
     
     const loadingState = document.getElementById('loadingState');
     const analysisPanel = document.getElementById('analysisPanel');
@@ -11,8 +12,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const origStatus = document.getElementById('origStatus');
     const origOutput = document.getElementById('origOutput');
 
+    const placeholders = {
+        python: `# Write some Python code here...\ndef calculate_fibonacci(n):\n    if n <= 1:\n        return n\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)\n\nprint('Result:', calculate_fibonacci(32))`,
+        c: `// Write some C code here...\n#include <stdio.h>\n\nint calculate_fibonacci(int n) {\n    if (n <= 1) return n;\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2);\n}\n\nint main() {\n    printf("Result: %d\\n", calculate_fibonacci(32));\n    return 0;\n}`,
+        cpp: `// Write some C++ code here...\n#include <iostream>\n\nint calculate_fibonacci(int n) {\n    if (n <= 1) return n;\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2);\n}\n\nint main() {\n    std::cout << "Result: " << calculate_fibonacci(32) << std::endl;\n    return 0;\n}`
+    };
+
+    languageSelect.addEventListener('change', (e) => {
+        codeInput.placeholder = placeholders[e.target.value];
+        codeInput.value = ""; // Clear existing code when changing language
+    });
+
     analyzeBtn.addEventListener('click', async () => {
-        const code = codeInput.value.trim();
+        const code = codeInput.value.trim() || codeInput.placeholder; // use placeholder if empty
+        const language = languageSelect.value;
         if (!code) return;
 
         // Reset UI
@@ -30,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ code })
+                body: JSON.stringify({ code, language })
             });
 
             if (!response.ok) {

@@ -324,3 +324,26 @@ pre {
 
 .diff-metric .value.faster { color: var(--success); }
 .diff-metric .value.slower { color: var(--error); }
+
+.lang-select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--panel-border);
+    color: var(--text-main);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.lang-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.lang-select option {
+    background: var(--bg-dark);
+    color: var(--text-main);
+}
