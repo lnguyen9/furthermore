@@ -69,8 +69,7 @@ print('Result:', calculate_fibonacci(32))"></textarea>
             
             <div id="loadingState" class="loading-state glass-panel hidden">
                 <div class="spinner"></div>
-                <h3>Agentic Workflow Running...</h3>
-                <p>Analyzing code -> Proposing Expansions -> Running Sandbox Benchmarks</p>
+                <h3 id="loadingStageText">Agentic Workflow Running...</h3>
             </div>
 
             <div id="analysisPanel" class="analysis-panel glass-panel hidden">
@@ -100,9 +99,27 @@ print('Result:', calculate_fibonacci(32))"></textarea>
         <div class="proposal-card glass-panel fade-in">
             <div class="proposal-header">
                 <h3 class="proposal-name"></h3>
-                <span class="badge time-badge"></span>
+                <span class="badge time-badge hidden"></span>
             </div>
-            <p class="proposal-description"></p>
+            
+            <div class="proposal-details">
+                <div class="info-group">
+                    <h4>Theory</h4>
+                    <p class="proposal-theory"></p>
+                </div>
+                <div class="info-group">
+                    <h4>Benefits</h4>
+                    <p class="proposal-benefits"></p>
+                </div>
+                <div class="info-group">
+                    <h4>Drawbacks</h4>
+                    <p class="proposal-drawbacks"></p>
+                </div>
+                <div class="info-group">
+                    <h4>Practical Uses</h4>
+                    <p class="proposal-uses"></p>
+                </div>
+            </div>
             
             <div class="code-compare">
                 <div class="code-block">
@@ -112,13 +129,19 @@ print('Result:', calculate_fibonacci(32))"></textarea>
             </div>
 
             <div class="benchmark-results">
-                <div class="metrics">
-                    <div class="metric"><span class="label">Status:</span> <span class="proposal-status badge"></span></div>
-                    <div class="metric diff-metric"><span class="label">Speedup:</span> <span class="proposal-diff value"></span></div>
+                <div class="proposal-loader" style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                    <div class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0;"></div>
+                    <span>Benchmarking Expansion...</span>
                 </div>
-                <div class="output-block">
-                    <h4>Sandbox Output</h4>
-                    <pre><code class="proposal-output"></code></pre>
+                <div class="benchmark-data hidden">
+                    <div class="metrics">
+                        <div class="metric"><span class="label">Status:</span> <span class="proposal-status badge"></span></div>
+                        <div class="metric diff-metric"><span class="label">Speedup:</span> <span class="proposal-diff value"></span></div>
+                    </div>
+                    <div class="output-block">
+                        <h4>Sandbox Output</h4>
+                        <pre><code class="proposal-output"></code></pre>
+                    </div>
                 </div>
             </div>
         </div>

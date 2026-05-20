@@ -25,7 +25,10 @@ class AnalyzeRequest(BaseModel):
 
 class ExpansionProposal(BaseModel):
     name: str
-    description: str
+    theory: str
+    benefits: str
+    drawbacks: str
+    practical_uses: str
     code: str
 
 class AnalysisResult(BaseModel):
@@ -126,7 +129,7 @@ def run_code_securely(code: str, language: str = "python", timeout: int = 5) -> 
             "execution_time_ms": 0
         }
 
-def execute_and_fix_code(code: str, language: str, client: genai.Client, max_retries: int = 2) -> tuple[dict, str]:
+def execute_and_fix_code(code: str, language: str, client: genai.Client, max_retries: int = 5) -> tuple[dict, str]:
     """Runs code securely. If it fails or outputs nothing, asks the LLM to fix it."""
     current_code = code
     final_result = None
@@ -180,8 +183,8 @@ def execute_and_fix_code(code: str, language: str, client: genai.Client, max_ret
             
     return final_result, current_code
 
-@app.post("/api/analyze")
-async def analyze_code(request: AnalyzeRequest):
+@app.post("/api/benchmark_original")
+async def benchmark_original(request: AnalyzeRequest):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set on the server.")
@@ -191,11 +194,25 @@ async def analyze_code(request: AnalyzeRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Client Init Error: {str(e)}")
 
-    # 1. Run Original Code Benchmark (and auto-fix if necessary)
     original_benchmark, fixed_original_code = execute_and_fix_code(request.code, request.language, client)
+    return {
+        "benchmark": original_benchmark,
+        "fixed_code": fixed_original_code if fixed_original_code.strip() != request.code.strip() else None
+    }
+
+class AnalyzeFixedRequest(BaseModel):
+    code: str
+    language: str = "python"
+
+@app.post("/api/analyze_code")
+async def analyze_code(request: AnalyzeFixedRequest):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set on the server.")
     
-    # 2. Agent Workflow: Analyze and Propose
     try:
+        client = genai.Client(api_key=api_key)
+        
         prompt = f"""
         Analyze the following {request.language} code.
         Identify its current purpose and time/space complexity.
@@ -204,7 +221,7 @@ async def analyze_code(request: AnalyzeRequest):
         
         Code to analyze:
         ```{request.language}
-        {fixed_original_code}
+        {request.code}
         ```
         """
         
@@ -218,26 +235,28 @@ async def analyze_code(request: AnalyzeRequest):
             ),
         )
         
-        analysis_data = json.loads(response.text)
+        return json.loads(response.text)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
-    # 3. Agent Workflow: Benchmark Proposals
-    benchmarked_proposals = []
-    for proposal in analysis_data.get("proposals", []):
-        benchmark_result, final_proposal_code = execute_and_fix_code(proposal["code"], request.language, client)
-        benchmarked_proposals.append({
-            "name": proposal["name"],
-            "description": proposal["description"],
-            "code": final_proposal_code,
-            "benchmark": benchmark_result
-        })
+class BenchmarkProposalRequest(BaseModel):
+    code: str
+    language: str
 
+@app.post("/api/benchmark_proposal")
+async def benchmark_proposal(request: BenchmarkProposalRequest):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set on the server.")
+    
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Client Init Error: {str(e)}")
+
+    benchmark_result, final_proposal_code = execute_and_fix_code(request.code, request.language, client)
     return {
-        "original_benchmark": original_benchmark,
-        "fixed_original_code": fixed_original_code if fixed_original_code.strip() != request.code.strip() else None,
-        "summary": analysis_data.get("summary", ""),
-        "complexity": analysis_data.get("complexity", ""),
-        "proposals": benchmarked_proposals
+        "benchmark": benchmark_result,
+        "fixed_code": final_proposal_code
     }
