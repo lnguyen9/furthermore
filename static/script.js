@@ -66,8 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderResults(data) {
         // Render Original Benchmark
         const origB = data.original_benchmark;
-        origTime.textContent = origB.execution_time_ms;
+        origTime.textContent = data.original_benchmark.execution_time_ms;
         
+        const origFixedCodeBlock = document.getElementById('origFixedCodeBlock');
+        const origFixedCode = document.getElementById('origFixedCode');
+        
+        if (data.fixed_original_code) {
+            origFixedCode.textContent = data.fixed_original_code;
+            origFixedCodeBlock.classList.remove('hidden');
+        } else {
+            origFixedCodeBlock.classList.add('hidden');
+        }
+
         origStatus.textContent = origB.success ? 'Success' : 'Failed';
         origStatus.className = `value badge ${origB.success ? 'success' : 'error'}`;
         
